@@ -1,0 +1,142 @@
+bram $__WOLF_MEM_8_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 20           # number of address bits
+    dbits 8            # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 0 0         # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+bram $__WOLF_MEM_16_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 19           # number of address bits
+    dbits 16           # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 0 0        # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+bram $__WOLF_MEM_32_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 18           # number of address bits
+    dbits 32           # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 0 0        # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+bram $__WOLF_MEM_64_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 17           # number of address bits
+    dbits 64           # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 0 0        # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+match $__WOLF_MEM_8_
+    max dcells 1
+    make_outreg
+endmatch
+
+match $__WOLF_MEM_16_
+    max dcells 1
+    make_outreg
+endmatch
+
+match $__WOLF_MEM_32_
+    max dcells 1
+    make_outreg
+endmatch
+
+match $__WOLF_MEM_64_
+    make_outreg
+endmatch
+
+
+bram $__WOLF_MEM_8_WMASK_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 20           # number of address bits
+    dbits 8            # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 8 0         # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+bram $__WOLF_MEM_16_WMASK_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 19           # number of address bits
+    dbits 16           # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 16 0        # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+bram $__WOLF_MEM_32_WMASK_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 18           # number of address bits
+    dbits 32           # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 32 0        # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+bram $__WOLF_MEM_64_WMASK_     # name of BRAM cell
+    init 0             # set to '1' if BRAM can be initialized
+    abits 17           # number of address bits
+    dbits 64           # number of data bits
+    groups 2           # number of port groups
+    ports  1 2         # number of ports in each group
+    wrmode 1 0         # set to '1' if this groups is write ports
+    enable 64 0        # number of enable bits
+    transp 0 2         # transparent (for read ports)
+    clocks 1 0         # clock configuration
+    clkpol 1 0         # clock polarity configuration
+endbram
+
+match $__WOLF_MEM_8_WMASK_
+    max dcells 1
+    make_outreg
+endmatch
+
+match $__WOLF_MEM_16_WMASK_
+    max dcells 1
+    make_outreg
+endmatch
+
+match $__WOLF_MEM_32_WMASK_
+    max dcells 1
+    make_outreg
+endmatch
+
+match $__WOLF_MEM_64_WMASK_
+    make_outreg
+endmatch

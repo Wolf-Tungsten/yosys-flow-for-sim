@@ -1,0 +1,4 @@
+flatten;
+proc;
+opt;
+memory -bram ../yosys-flow-for-sim/wolf_emu_bram.txt;;
