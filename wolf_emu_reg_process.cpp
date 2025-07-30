@@ -41,7 +41,7 @@ struct WolfEMUDffPass : public Pass {
                 if (!qw) continue;
 
                 std::string reg_name = log_id(qw->name);
-                std::string new_reg_name = "\\WOLF_REG$" + reg_name;
+                std::string new_reg_name = "\\$WOLF_REG$" + reg_name;
                 std::string new_wire_name = "\\" + reg_name + ".Q";
 
                 //m->rename(qw, new_wire_name);
