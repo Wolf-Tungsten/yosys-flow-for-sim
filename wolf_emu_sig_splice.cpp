@@ -16,7 +16,7 @@ struct WolfEmuSigSplicePass : public Pass
 
     void add_sig_spec_to_map(const RTLIL::SigSpec &sig_spec)
     {
-        for (int chunk_index = 0; chunk_index < sig_spec.chunks().size(); chunk_index++)
+        for (size_t chunk_index = 0; chunk_index < sig_spec.chunks().size(); chunk_index++)
         {
             auto &chunk = sig_spec.chunks()[chunk_index];
             if (!chunk.is_wire())
@@ -136,7 +136,7 @@ struct WolfEmuSigSplicePass : public Pass
                 log_assert(tmp_wire_chunk.is_wire());
                 // 生成的新 wire 的名称是 old_name_highbitidx_lowbitidx
                 IdString new_wire_name = module->uniquify(tmp_wire_chunk.wire->name.str() +
-                                                          std::string("_") + std::to_string(tmp_wire_chunk.offset + tmp_wire_chunk.width) + std::string("_") + std::to_string(tmp_wire_chunk.offset));
+                                                          std::string("$$") + std::to_string(tmp_wire_chunk.offset + tmp_wire_chunk.width-1) + std::string(":") + std::to_string(tmp_wire_chunk.offset));
                 Wire *new_wire_p = module->addWire(new_wire_name, tmp_wire_chunk.width);
                 new_wire_p->attributes = tmp_wire_chunk.wire->attributes; // 复制属性
                 // 添加用于调试的信息
@@ -169,7 +169,7 @@ struct WolfEmuSigSplicePass : public Pass
     SigSpec update_sig_spec(const SigSpec &old_sig_spec)
     {
         SigSpec new_sig_spec = old_sig_spec;
-        for (int chunk_index = 0; chunk_index < old_sig_spec.chunks().size(); chunk_index++)
+        for (size_t chunk_index = 0; chunk_index < old_sig_spec.chunks().size(); chunk_index++)
         {
             auto &chunk = old_sig_spec.chunks()[chunk_index];
             if (!chunk.is_wire())
@@ -189,19 +189,38 @@ struct WolfEmuSigSplicePass : public Pass
                 }
             }
         }
+        log_assert(new_sig_spec.size() == old_sig_spec.size());
         return new_sig_spec;
     }
 
     void update_all_sigspecs(Module *module)
     {
         // 遍历所有的 connections，将其 SigSpec 更新为新的 SigSpec
-        for (auto &sigsig : module->connections())
+        std::vector<RTLIL::SigSig> connections_to_add;
+        for (const auto &sigsig : module->connections())
         {
             RTLIL::SigSpec new_first = update_sig_spec(sigsig.first);
             RTLIL::SigSpec new_second = update_sig_spec(sigsig.second);
+            log("Updating connection\nFirst: \n");
+            __debug_print_sigspec(sigsig.first);
+            log("to: \n"); 
+            __debug_print_sigspec(new_first);
+            log("Second: \n");
+            __debug_print_sigspec(sigsig.second);
+            log("to: \n");
+            __debug_print_sigspec(new_second);
+            log("\n\n");
             // 添加新的 connections，旧的不用删除，留给 clean pass 处理
-            module->connect(new_first, new_second);
+            connections_to_add.emplace_back(new_first, new_second);
         }
+        // 添加新的 connections 到模块中
+        for (const auto &new_connection : connections_to_add)
+        {
+            module->connect(new_connection);
+        }
+        connections_to_add.clear();
+
+        log("Updated connections in module: %s\n", module->name.c_str());
         // 遍历所有的 cells，将其 port 上的 SigSpec 更新为新的 SigSpec，重新连接到端口上
         for (auto *cell : module->cells())
         {
@@ -211,6 +230,12 @@ struct WolfEmuSigSplicePass : public Pass
                 IdString port_name = entry.first;
                 RTLIL::SigSpec old_sig_spec = entry.second;
                 RTLIL::SigSpec new_sig_spec = update_sig_spec(old_sig_spec);
+                log("Updating cell %s port %s\n", log_id(cell->name), log_id(port_name));
+                log("Old SigSpec: \n");
+                __debug_print_sigspec(old_sig_spec);
+                log("New SigSpec: \n");
+                __debug_print_sigspec(new_sig_spec);
+                log("\n\n");
                 cell->unsetPort(port_name); // 先取消旧的连接
                 // 重新设置新的 SigSpec 到端口上
                 cell->setPort(port_name, new_sig_spec);
@@ -291,10 +316,10 @@ struct WolfEmuSigSplicePass : public Pass
         // 生成 wire_sig_bit_cluster
         gen_wire_sig_bit_cluster();
         __debug_print_wire_sig_bit_cluster();
-        // // 创建新的 wires
-        // create_new_wires(m);
-        // // 更新所有的 SigSpec
-        // update_all_sigspecs(m);
+        // 创建新的 wires
+        create_new_wires(m);
+        // 更新所有的 SigSpec
+        update_all_sigspecs(m);
         // // 处理输入信号
         // process_input(m);
         // // 处理输出信号
