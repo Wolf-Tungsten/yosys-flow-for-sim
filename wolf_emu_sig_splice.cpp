@@ -136,7 +136,7 @@ struct WolfEmuSigSplicePass : public Pass
                 log_assert(tmp_wire_chunk.is_wire());
                 // 生成的新 wire 的名称是 old_name_highbitidx_lowbitidx
                 IdString new_wire_name = module->uniquify(tmp_wire_chunk.wire->name.str() +
-                                                          std::string("$$") + std::to_string(tmp_wire_chunk.offset + tmp_wire_chunk.width-1) + std::string(":") + std::to_string(tmp_wire_chunk.offset));
+                                                          std::string("$$") + std::to_string(tmp_wire_chunk.offset + tmp_wire_chunk.width-1) + std::string("_") + std::to_string(tmp_wire_chunk.offset));
                 Wire *new_wire_p = module->addWire(new_wire_name, tmp_wire_chunk.width);
                 new_wire_p->attributes = tmp_wire_chunk.wire->attributes; // 复制属性
                 // 添加用于调试的信息
@@ -196,6 +196,7 @@ struct WolfEmuSigSplicePass : public Pass
     void update_all_sigspecs(Module *module)
     {
         // 遍历所有的 connections，将其 SigSpec 更新为新的 SigSpec
+        log("Updating connections in module: %s\n\n", module->name.c_str());
         std::vector<RTLIL::SigSig> connections_to_add;
         for (const auto &sigsig : module->connections())
         {
@@ -220,7 +221,7 @@ struct WolfEmuSigSplicePass : public Pass
         }
         connections_to_add.clear();
 
-        log("Updated connections in module: %s\n", module->name.c_str());
+        log("Updating cells port in module: %s\n\n", module->name.c_str());
         // 遍历所有的 cells，将其 port 上的 SigSpec 更新为新的 SigSpec，重新连接到端口上
         for (auto *cell : module->cells())
         {
@@ -260,29 +261,44 @@ struct WolfEmuSigSplicePass : public Pass
         }
         // 创建一个新的 Cell，将两端连接起来
         auto *new_cell = module->addCell(NEW_ID, "$__WOLF_EMU_INPUT_SPLICE_");
-        new_cell->setPort("I", input_sig_spec);
-        new_cell->setPort("O", new_input_sig_spec);
+        new_cell->setPort("\\I", input_sig_spec);
+        new_cell->setPort("\\O", new_input_sig_spec);
     }
 
     void process_output(Module *module)
     {
         // 遍历所有的输出信号，将其 SigBit 更新为新的 SigBit
-        SigSpec output_sig_spec = SigSpec();
+        SigSpec new_output_sig_spec = SigSpec();
         for (auto &entry : output_sig_bit_update_map)
         {
-            RTLIL::SigBit old_sig_bit = entry.first;
-            output_sig_spec.append(old_sig_bit);
+            RTLIL::SigBit new_sig_bit = entry.first;
+            new_output_sig_spec.append(new_sig_bit);
         }
-        output_sig_spec.sort_and_unify();
-        SigSpec new_output_sig_spec = SigSpec();
-        for (auto &s : output_sig_spec.bits())
+        new_output_sig_spec.sort_and_unify();
+        SigSpec output_sig_spec = SigSpec();
+        for (auto &s : new_output_sig_spec.bits())
         {
-            new_output_sig_spec.append(output_sig_bit_update_map[s]);
+            output_sig_spec.append(output_sig_bit_update_map[s]);
         }
         // 创建一个新的 Cell，将两端连接起来
         auto *new_cell = module->addCell(NEW_ID, "$__WOLF_EMU_OUTPUT_SPLICE_");
-        new_cell->setPort("I", new_output_sig_spec);
-        new_cell->setPort("O", output_sig_spec);
+        new_cell->setPort("\\I", new_output_sig_spec);
+        new_cell->setPort("\\O", output_sig_spec);
+    }
+
+    void cleanup(Module *module)
+    {
+        // 清理模块中的临时信号和属性
+        pool<RTLIL::Wire*> wires_to_remove;
+        for(const auto &entry: sig_bit_update_map) {
+            const auto & old_bit = std::get<2>(entry.first);
+            Wire* old_wire = old_bit.wire;
+            if(old_wire != nullptr && !old_wire->port_input && !old_wire->port_output) {
+                // 如果不是输入或输出端口的 wire，则标记为待删除
+                wires_to_remove.insert(old_wire);
+            }
+        }
+        module->remove(wires_to_remove);
     }
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
@@ -321,9 +337,10 @@ struct WolfEmuSigSplicePass : public Pass
         // 更新所有的 SigSpec
         update_all_sigspecs(m);
         // // 处理输入信号
-        // process_input(m);
+        process_input(m);
         // // 处理输出信号
-        // process_output(m);
+        process_output(m);
         // log("Finished processing module: %s\n", m->name.c_str());
+        cleanup(m);
     }
 } WolfEmuSigSplicePass;
