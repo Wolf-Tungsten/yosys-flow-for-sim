@@ -1,0 +1,13 @@
+read_verilog mem_process_test.v;
+flatten;
+proc;
+memory -nordff -nomap;
+#techmap;
+#memory -bram ../../wolf_emu_bram.txt;;
+#techmap -extern -map ../../wolf_emu_bram_map.v;
+wolf_emu_keep_mem;
+memory;
+wolf_emu_let_mem_go;
+show -format dot -prefix design;
+write_rtlil mem_process_test.rtlil;
+write_verilog mem_process_test_netlist.v;

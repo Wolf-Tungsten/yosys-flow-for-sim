@@ -1,3 +1,9 @@
 kernel/
-testcase/
 .vscode/
+*.dot
+*.rtlil
+*_netlist.v
+*.d
+*.so
+*.json
+*.log

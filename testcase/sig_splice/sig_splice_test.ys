@@ -1,0 +1,9 @@
+read_verilog sig_splice_test.v;
+hierarchy -top sig_splice_test;
+flatten;
+proc;
+wolf_emu_sig_splice;
+opt;
+clean;
+write_rtlil sig_splice_test.rtlil;
+write_json sig_splice_test.json;
